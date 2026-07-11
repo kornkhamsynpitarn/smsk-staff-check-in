@@ -110,6 +110,11 @@
   }
   select:focus, input:focus{outline:2px solid var(--brass-500); outline-offset:1px;}
 
+  .last-action{
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(10px,1.4dvh,12px);color:var(--brass-400);
+    opacity:.85;margin-top:clamp(-4px,-0.6dvh,-2px);margin-bottom:clamp(8px,1.6dvh,16px);flex:0 0 auto;
+  }
+
   .manage-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;flex:0 0 auto;}
   .manage-row input{margin-bottom:0;flex:1;min-width:140px;}
   .small-btn{
@@ -242,6 +247,7 @@
 
       <label for="employeeSelect" id="employeeLabelText">Employee</label>
       <select id="employeeSelect"><option>Loading…</option></select>
+      <div id="lastActionText" class="last-action">—</div>
 
       <label id="photoLabelText">Photo (required to confirm)</label>
       <div class="photo-row" id="photoRow">
@@ -266,8 +272,7 @@
     <div id="periodLabel" style="font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--brass-400);opacity:.85;margin-bottom:16px;margin-top:-8px;">—</div>
 
     <div class="manage-row" style="margin-top:14px;margin-bottom:0;">
-      <button class="small-btn" id="exportLogBtn" type="button">Export Raw Log (CSV)</button>
-      <button class="small-btn" id="exportSummaryBtn" type="button">Export Daily Summary (CSV)</button>
+      <button class="small-btn" id="exportSummaryBtn" type="button">Monthly Summary Report</button>
     </div>
     <div class="manage-row" style="margin-top:8px;margin-bottom:0;">
       <button class="small-btn" id="refreshBtn" type="button">Refresh</button>
@@ -293,7 +298,7 @@
 (function(){
   // ====== CONFIGURE THIS ======
   // Paste the Web app URL from your Google Apps Script deployment here.
-  const API_URL = "https://script.google.com/macros/s/AKfycbzZide_0QwQEDR5y_9mpdpAXKigbxFcq9ZvYcVsM43wSdkIaXBOdJnyycYe2J-k--sM/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbz6b_3r2GLxY1PX_rTkSIrcplaDkewlGlsDnzlDGOuwyH3Tn-kGB3_MIBVPnHhG_BAh/exec";
   // =============================
 
   // ---------- Translations ----------
@@ -333,15 +338,16 @@
       setupRequiredHistory: "Setup required — contact your administrator.",
       otPeriodLabel: "OT Pay Period (cutoff 25th–24th)",
       periodPrefix: "Period: ",
-      exportRaw: "Export Raw Log (CSV)",
-      exportSummary: "Export Daily Summary (CSV)",
+      exportSummary: "Monthly Summary Report",
       refresh: "Refresh",
       footerNote: "Data is stored in your team's Google Sheet — visible to everyone using this app.",
-      alertNoExport: "No entries to export yet.",
       alertNoExportPeriod: "No entries found in this pay period",
       checkedInWord: "Checked in",
       checkedOutWord: "Checked out",
       saveFail: "Could not save this entry. Check your connection and try again.",
+      lastNone: "No check-ins recorded yet",
+      lastTemplateToday: "Last: {action} today at {time}",
+      lastTemplateOther: "Last: {action} on {date} at {time}",
     },
     th: {
       eyebrow: "สมุดบันทึกเวลาทำงานพนักงาน",
@@ -378,15 +384,16 @@
       setupRequiredHistory: "ต้องตั้งค่าระบบ — ติดต่อผู้ดูแลระบบ",
       otPeriodLabel: "รอบคำนวณ OT (ตัดรอบวันที่ 25 ถึง 24)",
       periodPrefix: "รอบ: ",
-      exportRaw: "ส่งออกบันทึกทั้งหมด (CSV)",
-      exportSummary: "ส่งออกสรุปรายวัน (CSV)",
+      exportSummary: "รายงานสรุปรายเดือน",
       refresh: "รีเฟรช",
       footerNote: "ข้อมูลถูกจัดเก็บใน Google Sheet ของทีมคุณ — พนักงานทุกคนที่ใช้แอปนี้จะเห็นข้อมูลร่วมกัน",
-      alertNoExport: "ยังไม่มีรายการให้ส่งออก",
       alertNoExportPeriod: "ไม่พบรายการในรอบนี้",
       checkedInWord: "เข้างาน",
       checkedOutWord: "ออกงาน",
       saveFail: "บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่",
+      lastNone: "ยังไม่มีประวัติการเข้า-ออกงาน",
+      lastTemplateToday: "ล่าสุด: {action}วันนี้ เวลา {time} น.",
+      lastTemplateOther: "ล่าสุด: {action}เมื่อ {date} เวลา {time} น.",
     },
     mm: {
       eyebrow: "ဝန်ထမ်းအလုပ်ချိန်မှတ်တမ်း",
@@ -423,15 +430,16 @@
       setupRequiredHistory: "စနစ်သတ်မှတ်ရန် လိုအပ်သည် — စီမံခန့်ခွဲသူထံ ဆက်သွယ်ပါ",
       otPeriodLabel: "OT တွက်ချက်ချိန် (၂၅ မှ ၂၄ အထိ)",
       periodPrefix: "ကာလ: ",
-      exportRaw: "မှတ်တမ်းအားလုံး ထုတ်ယူရန် (CSV)",
-      exportSummary: "နေ့စဉ်အနှစ်ချုပ် ထုတ်ယူရန် (CSV)",
+      exportSummary: "လစဉ်အနှစ်ချုပ် အစီရင်ခံစာ",
       refresh: "ပြန်လည်ဆွဲယူရန်",
       footerNote: "ဒေတာများကို သင့်အဖွဲ့၏ Google Sheet တွင် သိမ်းဆည်းထားပြီး ဤအက်ပ်ကို အသုံးပြုသူအားလုံး မြင်ရပါသည်",
-      alertNoExport: "ထုတ်ယူရန် မှတ်တမ်း မရှိသေးပါ",
       alertNoExportPeriod: "ဤကာလအတွင်း မှတ်တမ်း မတွေ့ပါ",
       checkedInWord: "အလုပ်ဝင်",
       checkedOutWord: "အလုပ်ထွက်",
       saveFail: "မှတ်တမ်း သိမ်းဆည်း၍ မရပါ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်စမ်းကြည့်ပါ",
+      lastNone: "မှတ်တမ်း မရှိသေးပါ",
+      lastTemplateToday: "နောက်ဆုံး: ယနေ့ {time} တွင် {action}",
+      lastTemplateOther: "နောက်ဆုံး: {date} ရက် {time} တွင် {action}",
     },
   };
   let LANG = 'en';
@@ -441,6 +449,7 @@
 
   const el = id => document.getElementById(id);
   const employeeSelect = el('employeeSelect');
+  const lastActionText = el('lastActionText');
   const historyList = el('historyList');
   const historyCount = el('historyCount');
   const confirmBtn = el('confirmBtn');
@@ -486,6 +495,7 @@
       opt.disabled = true; opt.selected = true;
       employeeSelect.appendChild(opt);
       updateConfirmState();
+      renderLastAction();
       return;
     }
     state.employees.forEach(name => {
@@ -494,7 +504,37 @@
       employeeSelect.appendChild(opt);
     });
     updateConfirmState();
+    renderLastAction();
   }
+
+  function renderLastAction(){
+    const name = employeeSelect.value;
+    if(!name){ lastActionText.textContent = ''; return; }
+
+    let latest = null;
+    for(const r of state.records){
+      if(r.employee !== name) continue;
+      if(!latest || new Date(r.timestamp) > new Date(latest.timestamp)) latest = r;
+    }
+
+    if(!latest){
+      lastActionText.textContent = t('lastNone');
+      return;
+    }
+
+    const d = new Date(latest.timestamp);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const action = latest.type === 'checkin' ? t('checkedInWord') : t('checkedOutWord');
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const template = isToday ? t('lastTemplateToday') : t('lastTemplateOther');
+    lastActionText.textContent = template
+      .replace('{action}', action)
+      .replace('{time}', time)
+      .replace('{date}', dateStr);
+  }
+  employeeSelect.addEventListener('change', renderLastAction);
 
   function updateConfirmState(){
     const hasEmployee = !!employeeSelect.value;
@@ -561,6 +601,8 @@
       cameraModalContent.innerHTML = '';
       videoEl = document.createElement('video');
       videoEl.autoplay = true; videoEl.playsInline = true; videoEl.srcObject = stream;
+      videoEl.style.transform = 'scaleX(-1)';
+      videoEl.style.filter = 'brightness(1.08) contrast(1.04) saturate(1.08)';
       cameraModalContent.appendChild(videoEl);
       const liveTag = document.createElement('div');
       liveTag.className = 'modal-live-tag'; liveTag.textContent = 'LIVE';
@@ -581,13 +623,39 @@
     closeModal();
   });
 
+  function captureBeautifiedPhoto(video){
+    const w = video.videoWidth || 480;
+    const h = video.videoHeight || 360;
+
+    // Pass 1: mirror + auto brightness/contrast/clarity enhancement.
+    const base = document.createElement('canvas');
+    base.width = w; base.height = h;
+    const bctx = base.getContext('2d');
+    bctx.translate(w, 0);
+    bctx.scale(-1, 1);
+    bctx.filter = 'brightness(1.08) contrast(1.05) saturate(1.08)';
+    bctx.drawImage(video, 0, 0, w, h);
+    bctx.filter = 'none';
+    bctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // Pass 2: soft-focus blend for skin-smoothing (blurred copy at partial opacity
+    // softens fine texture/blemishes while keeping edges and features recognizable).
+    const soft = document.createElement('canvas');
+    soft.width = w; soft.height = h;
+    const sctx = soft.getContext('2d');
+    sctx.filter = 'blur(3px)';
+    sctx.drawImage(base, 0, 0);
+
+    bctx.globalAlpha = 0.35;
+    bctx.drawImage(soft, 0, 0);
+    bctx.globalAlpha = 1;
+
+    return base.toDataURL('image/jpeg', 0.85);
+  }
+
   modalCaptureBtn.addEventListener('click', () => {
     if(!videoEl) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth || 480;
-    canvas.height = videoEl.videoHeight || 360;
-    canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    state.capturedPhoto = canvas.toDataURL('image/jpeg', 0.6);
+    state.capturedPhoto = captureBeautifiedPhoto(videoEl);
 
     const liveTag = cameraModal.querySelector('.modal-live-tag');
     if(liveTag) liveTag.remove();
@@ -731,17 +799,6 @@
     URL.revokeObjectURL(url);
   }
 
-  el('exportLogBtn').addEventListener('click', () => {
-    if(state.records.length === 0){ alert(t('alertNoExport')); return; }
-    const rows = [['Employee', 'Type', 'Date', 'Time', 'Timestamp (ISO)', 'Photo URL']];
-    [...state.records].reverse().forEach(r => {
-      const d = new Date(r.timestamp);
-      rows.push([r.employee, r.type === 'checkin' ? 'Check In' : 'Check Out',
-        d.toLocaleDateString('en-CA'), d.toLocaleTimeString([], {hour12:false}), r.timestamp, r.photoUrl || '']);
-    });
-    downloadCSV('checkin-log_' + new Date().toLocaleDateString('en-CA') + '.csv', rows);
-  });
-
   el('exportSummaryBtn').addEventListener('click', () => {
     const { start, end } = getPeriodRange();
     const periodRecords = state.records.filter(r => {
@@ -775,7 +832,7 @@
           lastOut ? lastOut.toLocaleTimeString([], {hour12:false}) : '—', hours, note]);
       });
     const periodTag = start.toLocaleDateString('en-CA') + '_to_' + end.toLocaleDateString('en-CA');
-    downloadCSV('OT-summary_' + periodTag + '.csv', rows);
+    downloadCSV('Monthly-Summary-Report_' + periodTag + '.csv', rows);
   });
 
   // ---------- Language switching ----------
@@ -796,7 +853,6 @@
     el('retakeBtn').textContent = t('retake');
     el('recentEntriesText').textContent = t('recentEntries');
     el('otPeriodLabelText').textContent = t('otPeriodLabel');
-    el('exportLogBtn').textContent = t('exportRaw');
     el('exportSummaryBtn').textContent = t('exportSummary');
     el('refreshBtn').textContent = t('refresh');
     el('footerNoteText').textContent = t('footerNote');
@@ -826,6 +882,7 @@
     try{
       state.records = await apiGet('records');
       renderHistory();
+      renderLastAction();
     }catch(e){ /* leave prior state */ }
   }
 
