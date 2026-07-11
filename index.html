@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Branch Ledger · Staff Check-in</title>
+<title>SMSK Branch Check-in</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
@@ -28,43 +28,70 @@
     color:var(--parchment-100);
     font-family:'IBM Plex Sans', sans-serif;
     min-height:100vh;
-    padding:28px 16px 60px;
+    padding:12px 14px 40px;
   }
   .wrap{max-width:560px;margin:0 auto;}
 
-  .letterhead{text-align:center;margin-bottom:22px;}
+  .kiosk-screen{
+    display:flex;
+    flex-direction:column;
+    height:100dvh;
+    height:100vh; /* fallback for browsers without dvh support */
+    max-height:900px;
+    padding:6px 0;
+    box-sizing:border-box;
+  }
+
+  .lang-switch{display:flex;justify-content:center;gap:6px;margin-bottom:clamp(6px,1.2dvh,10px);flex:0 0 auto;}
+  .lang-btn{
+    background:transparent;border:1px solid var(--line);color:var(--parchment-200);
+    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.05em;
+    padding:4px 12px;border-radius:5px;cursor:pointer;opacity:.7;
+  }
+  .lang-btn.active{background:var(--brass-500);color:#1f1706;border-color:var(--brass-500);font-weight:600;opacity:1;}
+
+  .letterhead{text-align:center;margin-bottom:clamp(6px,1.6dvh,16px);flex:0 0 auto;}
   .letterhead .eyebrow{
-    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--brass-400);margin-bottom:6px;
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(9px,1.3dvh,11px);letter-spacing:.18em;
+    text-transform:uppercase;color:var(--brass-400);margin-bottom:clamp(3px,0.6dvh,6px);
   }
   .letterhead h1{
-    font-family:'Spectral', serif;font-weight:600;font-size:26px;margin:0;
-    color:var(--parchment-100);border-bottom:1px solid var(--line);padding-bottom:14px;
+    font-family:'Spectral', serif;font-weight:600;font-size:clamp(18px,3.4dvh,26px);margin:0;
+    color:var(--parchment-100);border-bottom:1px solid var(--line);padding-bottom:clamp(6px,1.2dvh,14px);
   }
   .clock{
-    font-family:'IBM Plex Mono', monospace;font-size:34px;letter-spacing:.03em;
-    color:var(--brass-400);margin-top:12px;font-variant-numeric:tabular-nums;
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(20px,4.2dvh,34px);letter-spacing:.03em;
+    color:var(--brass-400);margin-top:clamp(4px,1dvh,12px);font-variant-numeric:tabular-nums;
   }
   .date-line{
-    font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--parchment-200);
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(10px,1.5dvh,12px);color:var(--parchment-200);
     opacity:.7;margin-top:2px;
   }
 
   .card{background:var(--ink-800);border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:18px;}
+  .kiosk-card{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    padding:clamp(12px,2.2dvh,22px);
+    margin-bottom:0;
+    overflow-y:auto;
+  }
 
   .conn-status{
-    font-family:'IBM Plex Mono', monospace;font-size:11px;text-align:center;
-    padding:8px;border-radius:6px;margin-bottom:18px;
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(9px,1.3dvh,11px);text-align:center;
+    padding:clamp(5px,0.9dvh,8px);border-radius:6px;margin-bottom:clamp(6px,1.4dvh,18px);flex:0 0 auto;
   }
   .conn-status.ok{background:rgba(90,160,111,0.12);color:var(--success-500);}
   .conn-status.err{background:rgba(181,87,63,0.15);color:#e08a72;}
   .conn-status.loading{background:rgba(201,162,75,0.1);color:var(--brass-400);}
 
-  .mode-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:18px;}
+  .mode-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:clamp(8px,1.6dvh,18px);flex:0 0 auto;}
   .mode-toggle button{
     flex:1;background:transparent;border:none;color:var(--parchment-200);
-    font-family:'IBM Plex Mono', monospace;font-size:13px;letter-spacing:.06em;
-    text-transform:uppercase;padding:12px 8px;cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(11px,1.6dvh,13px);letter-spacing:.06em;
+    text-transform:uppercase;padding:clamp(8px,1.4dvh,12px) 8px;cursor:pointer;
     transition:background .15s ease, color .15s ease;
   }
   .mode-toggle button + button{border-left:1px solid var(--line);}
@@ -72,21 +99,22 @@
   .mode-toggle button.active.checkout{background:var(--exit-500);color:#1f0d09;font-weight:600;}
 
   label{
-    display:block;font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--parchment-200);opacity:.75;margin-bottom:6px;
+    display:block;font-family:'IBM Plex Mono', monospace;font-size:clamp(9px,1.3dvh,11px);letter-spacing:.1em;
+    text-transform:uppercase;color:var(--parchment-200);opacity:.75;margin-bottom:clamp(3px,0.7dvh,6px);flex:0 0 auto;
   }
 
   select, input[type=text]{
     width:100%;background:var(--ink-700);border:1px solid var(--line);color:var(--parchment-100);
-    font-family:'IBM Plex Sans', sans-serif;font-size:15px;padding:12px 12px;border-radius:6px;margin-bottom:16px;
+    font-family:'IBM Plex Sans', sans-serif;font-size:clamp(13px,1.8dvh,15px);padding:clamp(8px,1.4dvh,12px) 12px;
+    border-radius:6px;margin-bottom:clamp(8px,1.6dvh,16px);flex:0 0 auto;
   }
   select:focus, input:focus{outline:2px solid var(--brass-500); outline-offset:1px;}
 
-  .manage-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .manage-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;flex:0 0 auto;}
   .manage-row input{margin-bottom:0;flex:1;min-width:140px;}
   .small-btn{
     background:transparent;border:1px solid var(--brass-500);color:var(--brass-400);
-    font-family:'IBM Plex Mono', monospace;font-size:12px;padding:0 14px;height:38px;
+    font-family:'IBM Plex Mono', monospace;font-size:12px;padding:0 14px;height:clamp(32px,5.5dvh,38px);
     border-radius:6px;cursor:pointer;white-space:nowrap;
   }
   .small-btn:hover{background:rgba(201,162,75,0.1);}
@@ -95,12 +123,13 @@
 
   .camera-box{
     position:relative;background:var(--ink-900);border:1px dashed var(--line);border-radius:8px;
-    aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:16px;
+    flex:1 1 auto;min-height:70px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    margin-bottom:clamp(6px,1.2dvh,16px);
   }
   .camera-box video, .camera-box canvas, .camera-box img{width:100%;height:100%;object-fit:cover;}
   .camera-box .hint{
-    font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--parchment-200);
-    opacity:.6;text-align:center;padding:0 20px;
+    font-family:'IBM Plex Mono', monospace;font-size:clamp(10px,1.5dvh,12px);color:var(--parchment-200);
+    opacity:.6;text-align:center;padding:0 16px;line-height:1.4;
   }
   .camera-live{
     position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono', monospace;font-size:10px;
@@ -108,9 +137,9 @@
   }
 
   .confirm-btn{
-    width:100%;border:none;border-radius:8px;padding:15px;font-family:'IBM Plex Mono', monospace;
-    font-size:14px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;cursor:pointer;
-    transition:transform .08s ease, opacity .15s ease;
+    width:100%;border:none;border-radius:8px;padding:clamp(11px,2dvh,15px);font-family:'IBM Plex Mono', monospace;
+    font-size:clamp(12px,1.8dvh,14px);letter-spacing:.08em;text-transform:uppercase;font-weight:600;cursor:pointer;
+    transition:transform .08s ease, opacity .15s ease;flex:0 0 auto;
   }
   .confirm-btn:active{transform:scale(0.98);}
   .confirm-btn:disabled{opacity:.4;cursor:not-allowed;}
@@ -139,7 +168,7 @@
   .empty-state{text-align:center;padding:30px 10px;font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--parchment-200);opacity:.5;}
 
   .stamp-flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;z-index:50;}
-  .stamp-flash.show{animation:stampIn .55s ease-out forwards;}
+  .stamp-flash.show{animation:stampIn 1.8s ease-out forwards;}
   .stamp-flash .ring{
     width:150px;height:150px;border-radius:50%;border:5px solid var(--brass-400);
     display:flex;align-items:center;justify-content:center;font-family:'Spectral', serif;
@@ -148,9 +177,10 @@
   }
   @keyframes stampIn{
     0%{opacity:0; transform:scale(1.6);}
-    35%{opacity:1; transform:scale(0.92);}
-    50%{transform:scale(1.04);}
-    70%{opacity:1; transform:scale(1);}
+    15%{opacity:1; transform:scale(0.92);}
+    22%{transform:scale(1.04);}
+    30%{transform:scale(1);}
+    80%{opacity:1; transform:scale(1);}
     100%{opacity:0; transform:scale(1);}
   }
 
@@ -162,49 +192,51 @@
 <body>
 <div class="wrap">
 
-  <div class="letterhead">
-    <div class="eyebrow">Staff Attendance Ledger</div>
-    <h1>Branch Check-in</h1>
-    <div class="clock" id="clock">--:--:--</div>
-    <div class="date-line" id="dateLine">—</div>
+  <div class="kiosk-screen">
+    <div class="lang-switch" id="langSwitch">
+      <button class="lang-btn" data-lang="th" type="button">TH</button>
+      <button class="lang-btn" data-lang="en" type="button">EN</button>
+      <button class="lang-btn" data-lang="mm" type="button">MM</button>
+    </div>
+
+    <div class="letterhead">
+      <div class="eyebrow" id="eyebrowText">Staff Attendance Ledger</div>
+      <h1 id="titleText">SMSK Branch Check-in</h1>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="date-line" id="dateLine">—</div>
+    </div>
+
+    <div class="conn-status loading" id="connStatus">Connecting to data source…</div>
+
+    <div class="card kiosk-card">
+      <div class="mode-toggle">
+        <button class="checkin active" id="modeInBtn" type="button">Check In</button>
+        <button class="checkout" id="modeOutBtn" type="button">Check Out</button>
+      </div>
+
+      <label for="employeeSelect" id="employeeLabelText">Employee</label>
+      <select id="employeeSelect"><option>Loading…</option></select>
+
+      <label id="photoLabelText">Photo (required to confirm)</label>
+      <div class="camera-box" id="cameraBox">
+        <div class="hint">Tap "Start Camera" and take a photo to prove you're on-site. A photo is required before you can confirm.</div>
+      </div>
+      <div class="manage-row" style="margin-bottom:8px;">
+        <button class="small-btn" id="startCameraBtn" type="button">Start Camera</button>
+        <button class="small-btn" id="captureBtn" type="button" style="display:none;">Capture Photo</button>
+        <button class="small-btn danger" id="retakeBtn" type="button" style="display:none;">Retake</button>
+      </div>
+      <div id="photoStatus" style="font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--exit-500); opacity:.85; margin-bottom:12px;">⚠ No photo captured yet</div>
+
+      <button class="confirm-btn checkin" id="confirmBtn" type="button" disabled>✓ Confirm Check-in</button>
+    </div>
   </div>
 
-  <div class="conn-status loading" id="connStatus">Connecting to data source…</div>
-
   <div class="card">
-    <div class="mode-toggle">
-      <button class="checkin active" id="modeInBtn" type="button">Check In</button>
-      <button class="checkout" id="modeOutBtn" type="button">Check Out</button>
-    </div>
-
-    <label for="employeeSelect">Employee</label>
-    <select id="employeeSelect"><option>Loading…</option></select>
-
-    <div class="manage-row">
-      <input type="text" id="newEmployeeName" placeholder="Add employee name" />
-      <button class="small-btn" id="addEmployeeBtn" type="button">Add</button>
-      <button class="small-btn danger" id="removeEmployeeBtn" type="button">Remove</button>
-    </div>
-
-    <label>Photo (required to confirm)</label>
-    <div class="camera-box" id="cameraBox">
-      <div class="hint">Tap "Start Camera" and take a photo to prove you're on-site. A photo is required before you can confirm.</div>
-    </div>
-    <div class="manage-row" style="margin-bottom:8px;">
-      <button class="small-btn" id="startCameraBtn" type="button">Start Camera</button>
-      <button class="small-btn" id="captureBtn" type="button" style="display:none;">Capture Photo</button>
-      <button class="small-btn danger" id="retakeBtn" type="button" style="display:none;">Retake</button>
-    </div>
-    <div id="photoStatus" style="font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--exit-500); opacity:.85; margin-bottom:16px;">⚠ No photo captured yet</div>
-
-    <button class="confirm-btn checkin" id="confirmBtn" type="button" disabled>✓ Confirm Check-in</button>
-  </div>
-
-  <div class="card">
-    <div class="section-title">Recent Entries <span class="count" id="historyCount">0 logged</span></div>
+    <div class="section-title"><span id="recentEntriesText">Recent Entries</span> <span class="count" id="historyCount">0 logged</span></div>
     <div id="historyList"><div class="empty-state">Loading ledger…</div></div>
 
-    <label style="margin-top:16px;">OT Pay Period (cutoff 26th–25th)</label>
+    <label style="margin-top:16px;" id="otPeriodLabelText">OT Pay Period (cutoff 25th–24th)</label>
     <div class="manage-row">
       <input type="month" id="periodMonth" style="flex:1;background:var(--ink-700);border:1px solid var(--line);color:var(--parchment-100);font-family:'IBM Plex Mono', monospace;font-size:14px;padding:10px 12px;border-radius:6px;" />
     </div>
@@ -216,11 +248,10 @@
     </div>
     <div class="manage-row" style="margin-top:8px;margin-bottom:0;">
       <button class="small-btn" id="refreshBtn" type="button">Refresh</button>
-      <button class="small-btn danger" id="clearHistoryBtn" type="button">Clear all history</button>
     </div>
   </div>
 
-  <div class="footer-note">Data is stored in your team's Google Sheet — visible to everyone using this app.</div>
+  <div class="footer-note" id="footerNoteText">Data is stored in your team's Google Sheet — visible to everyone using this app.</div>
 </div>
 
 <div class="stamp-flash" id="stampFlash"><div class="ring" id="stampRing">Checked In</div></div>
@@ -229,10 +260,151 @@
 (function(){
   // ====== CONFIGURE THIS ======
   // Paste the Web app URL from your Google Apps Script deployment here.
-  const API_URL = "https://script.google.com/macros/s/AKfycbz3r8DroJxNYYtknr1NNfOGrVmxNEdJxMklswB_q253SpHny0oCqW1PYcqG2oB__uqo/exec";
+  const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
   // =============================
 
-  const state = { mode: 'checkin', employees: [], records: [], capturedPhoto: null, stream: null };
+  // ---------- Translations ----------
+  const T = {
+    en: {
+      eyebrow: "Staff Attendance Ledger",
+      title: "SMSK Branch Check-in",
+      connConnecting: "Connecting to data source…",
+      connOk: "✓ Connected to Google Sheet",
+      connErr: "⚠ Could not connect. Check your internet connection.",
+      connNotConfigured: "⚠ Setup required — contact your administrator.",
+      modeCheckIn: "Check In",
+      modeCheckOut: "Check Out",
+      employeeLabel: "Employee",
+      employeeLoading: "Loading…",
+      employeeNone: "No employees available",
+      employeeSetupRequired: "Setup required",
+      photoLabel: "Photo (required to confirm)",
+      cameraHintDefault: "Tap \"Start Camera\" and take a photo to prove you're on-site. A photo is required before you can confirm.",
+      startCamera: "Start Camera",
+      capturePhoto: "Capture Photo",
+      retake: "Retake",
+      photoCaptured: "✓ Photo captured",
+      photoNotCaptured: "⚠ No photo captured yet",
+      cameraUnsupported: "Camera access isn't available in this browser.",
+      cameraRequesting: "Requesting camera…",
+      cameraDenied: "Camera permission denied. A photo is required — please allow camera access and try again.",
+      confirmCheckIn: "✓ Confirm Check-in",
+      confirmCheckOut: "✓ Confirm Check-out",
+      confirmSaving: "Saving…",
+      stampCheckedIn: "Checked In",
+      stampCheckedOut: "Checked Out",
+      recentEntries: "Recent Entries",
+      logged: "logged",
+      loadingLedger: "Loading ledger…",
+      noEntries: "No entries yet. Check in above to start the ledger.",
+      setupRequiredHistory: "Setup required — contact your administrator.",
+      otPeriodLabel: "OT Pay Period (cutoff 25th–24th)",
+      periodPrefix: "Period: ",
+      exportRaw: "Export Raw Log (CSV)",
+      exportSummary: "Export Daily Summary (CSV)",
+      refresh: "Refresh",
+      footerNote: "Data is stored in your team's Google Sheet — visible to everyone using this app.",
+      alertNoExport: "No entries to export yet.",
+      alertNoExportPeriod: "No entries found in this pay period",
+      checkedInWord: "Checked in",
+      checkedOutWord: "Checked out",
+      saveFail: "Could not save this entry. Check your connection and try again.",
+    },
+    th: {
+      eyebrow: "สมุดบันทึกเวลาทำงานพนักงาน",
+      title: "เข้า-ออกงาน สาขา SMSK",
+      connConnecting: "กำลังเชื่อมต่อฐานข้อมูล…",
+      connOk: "✓ เชื่อมต่อ Google Sheet สำเร็จ",
+      connErr: "⚠ เชื่อมต่อไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต",
+      connNotConfigured: "⚠ ต้องตั้งค่าระบบก่อน — ติดต่อผู้ดูแลระบบ",
+      modeCheckIn: "เข้างาน",
+      modeCheckOut: "ออกงาน",
+      employeeLabel: "พนักงาน",
+      employeeLoading: "กำลังโหลด…",
+      employeeNone: "ไม่มีรายชื่อพนักงาน",
+      employeeSetupRequired: "ต้องตั้งค่าระบบ",
+      photoLabel: "ถ่ายรูป (จำเป็นต้องถ่ายก่อนยืนยัน)",
+      cameraHintDefault: "แตะ \"เปิดกล้อง\" แล้วถ่ายรูปเพื่อยืนยันว่าอยู่ที่ทำงานจริง จำเป็นต้องมีรูปถ่ายก่อนยืนยัน",
+      startCamera: "เปิดกล้อง",
+      capturePhoto: "ถ่ายรูป",
+      retake: "ถ่ายใหม่",
+      photoCaptured: "✓ ถ่ายรูปแล้ว",
+      photoNotCaptured: "⚠ ยังไม่ได้ถ่ายรูป",
+      cameraUnsupported: "เบราว์เซอร์นี้ไม่รองรับการใช้กล้อง",
+      cameraRequesting: "กำลังขอสิทธิ์ใช้กล้อง…",
+      cameraDenied: "ไม่ได้รับอนุญาตให้ใช้กล้อง จำเป็นต้องมีรูปถ่าย กรุณาอนุญาตการใช้กล้องแล้วลองใหม่",
+      confirmCheckIn: "✓ ยืนยันเข้างาน",
+      confirmCheckOut: "✓ ยืนยันออกงาน",
+      confirmSaving: "กำลังบันทึก…",
+      stampCheckedIn: "เข้างานแล้ว",
+      stampCheckedOut: "ออกงานแล้ว",
+      recentEntries: "รายการล่าสุด",
+      logged: "รายการ",
+      loadingLedger: "กำลังโหลดข้อมูล…",
+      noEntries: "ยังไม่มีรายการ กรุณาเข้างานด้านบนเพื่อเริ่มบันทึก",
+      setupRequiredHistory: "ต้องตั้งค่าระบบ — ติดต่อผู้ดูแลระบบ",
+      otPeriodLabel: "รอบคำนวณ OT (ตัดรอบวันที่ 25 ถึง 24)",
+      periodPrefix: "รอบ: ",
+      exportRaw: "ส่งออกบันทึกทั้งหมด (CSV)",
+      exportSummary: "ส่งออกสรุปรายวัน (CSV)",
+      refresh: "รีเฟรช",
+      footerNote: "ข้อมูลถูกจัดเก็บใน Google Sheet ของทีมคุณ — พนักงานทุกคนที่ใช้แอปนี้จะเห็นข้อมูลร่วมกัน",
+      alertNoExport: "ยังไม่มีรายการให้ส่งออก",
+      alertNoExportPeriod: "ไม่พบรายการในรอบนี้",
+      checkedInWord: "เข้างาน",
+      checkedOutWord: "ออกงาน",
+      saveFail: "บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่",
+    },
+    mm: {
+      eyebrow: "ဝန်ထမ်းအလုပ်ချိန်မှတ်တမ်း",
+      title: "SMSK ဌာနခွဲ အလုပ်ဝင်/ထွက်",
+      connConnecting: "ဒေတာဆာဗာနှင့် ချိတ်ဆက်နေသည်…",
+      connOk: "✓ Google Sheet နှင့် ချိတ်ဆက်ပြီးပါပြီ",
+      connErr: "⚠ ချိတ်ဆက်၍မရပါ အင်တာနက်ကို စစ်ဆေးပါ",
+      connNotConfigured: "⚠ စနစ်သတ်မှတ်ရန် လိုအပ်သည် — စီမံခန့်ခွဲသူထံ ဆက်သွယ်ပါ",
+      modeCheckIn: "အလုပ်ဝင်ချိန်",
+      modeCheckOut: "အလုပ်ထွက်ချိန်",
+      employeeLabel: "ဝန်ထမ်း",
+      employeeLoading: "လုပ်ဆောင်နေသည်…",
+      employeeNone: "ဝန်ထမ်းစာရင်း မရှိသေးပါ",
+      employeeSetupRequired: "စနစ်သတ်မှတ်ရန် လိုအပ်သည်",
+      photoLabel: "ဓာတ်ပုံ (အတည်ပြုရန် လိုအပ်သည်)",
+      cameraHintDefault: "\"ကင်မရာဖွင့်ရန်\" ကို နှိပ်ပြီး လက်ရှိနေရာတွင် ရှိကြောင်း သက်သေပြရန် ဓာတ်ပုံရိုက်ပါ။ အတည်ပြုရန် ဓာတ်ပုံ လိုအပ်သည်။",
+      startCamera: "ကင်မရာဖွင့်ရန်",
+      capturePhoto: "ဓာတ်ပုံရိုက်ရန်",
+      retake: "ပြန်ရိုက်ရန်",
+      photoCaptured: "✓ ဓာတ်ပုံရိုက်ပြီးပါပြီ",
+      photoNotCaptured: "⚠ ဓာတ်ပုံ မရိုက်ရသေးပါ",
+      cameraUnsupported: "ဤဘရောက်ဆာတွင် ကင်မရာသုံးစွဲ၍ မရပါ",
+      cameraRequesting: "ကင်မရာခွင့်ပြုချက် တောင်းနေသည်…",
+      cameraDenied: "ကင်မရာခွင့်ပြုချက် မရရှိပါ။ ဓာတ်ပုံ လိုအပ်ပါသည် — ကင်မရာအား ခွင့်ပြုပြီး ထပ်စမ်းကြည့်ပါ။",
+      confirmCheckIn: "✓ အလုပ်ဝင်ချိန် အတည်ပြုမည်",
+      confirmCheckOut: "✓ အလုပ်ထွက်ချိန် အတည်ပြုမည်",
+      confirmSaving: "သိမ်းဆည်းနေသည်…",
+      stampCheckedIn: "အလုပ်ဝင်ပြီး",
+      stampCheckedOut: "အလုပ်ထွက်ပြီး",
+      recentEntries: "လတ်တလော မှတ်တမ်းများ",
+      logged: "မှတ်တမ်း",
+      loadingLedger: "မှတ်တမ်း ဖွင့်နေသည်…",
+      noEntries: "မှတ်တမ်း မရှိသေးပါ အထက်တွင် စတင် အလုပ်ဝင်ချိန်းပါ",
+      setupRequiredHistory: "စနစ်သတ်မှတ်ရန် လိုအပ်သည် — စီမံခန့်ခွဲသူထံ ဆက်သွယ်ပါ",
+      otPeriodLabel: "OT တွက်ချက်ချိန် (၂၅ မှ ၂၄ အထိ)",
+      periodPrefix: "ကာလ: ",
+      exportRaw: "မှတ်တမ်းအားလုံး ထုတ်ယူရန် (CSV)",
+      exportSummary: "နေ့စဉ်အနှစ်ချုပ် ထုတ်ယူရန် (CSV)",
+      refresh: "ပြန်လည်ဆွဲယူရန်",
+      footerNote: "ဒေတာများကို သင့်အဖွဲ့၏ Google Sheet တွင် သိမ်းဆည်းထားပြီး ဤအက်ပ်ကို အသုံးပြုသူအားလုံး မြင်ရပါသည်",
+      alertNoExport: "ထုတ်ယူရန် မှတ်တမ်း မရှိသေးပါ",
+      alertNoExportPeriod: "ဤကာလအတွင်း မှတ်တမ်း မတွေ့ပါ",
+      checkedInWord: "အလုပ်ဝင်",
+      checkedOutWord: "အလုပ်ထွက်",
+      saveFail: "မှတ်တမ်း သိမ်းဆည်း၍ မရပါ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်စမ်းကြည့်ပါ",
+    },
+  };
+  let LANG = 'th';
+  function t(key){ return (T[LANG] && T[LANG][key]) || T.en[key] || key; }
+
+  const state = { mode: 'checkin', employees: [], records: [], capturedPhoto: null, stream: null, connState: 'loading', cameraState: 'idle' };
 
   const el = id => document.getElementById(id);
   const employeeSelect = el('employeeSelect');
@@ -273,7 +445,7 @@
     employeeSelect.innerHTML = '';
     if(state.employees.length === 0){
       const opt = document.createElement('option');
-      opt.textContent = 'No employees yet — add one below';
+      opt.textContent = t('employeeNone');
       opt.disabled = true; opt.selected = true;
       employeeSelect.appendChild(opt);
       updateConfirmState();
@@ -291,38 +463,12 @@
     const hasEmployee = !!employeeSelect.value;
     const hasPhoto = !!state.capturedPhoto;
     confirmBtn.disabled = !(hasEmployee && hasPhoto && apiConfigured());
-    photoStatus.textContent = hasPhoto ? '✓ Photo captured' : '⚠ No photo captured yet';
+    photoStatus.textContent = hasPhoto ? t('photoCaptured') : t('photoNotCaptured');
     photoStatus.style.color = hasPhoto
       ? getComputedStyle(document.documentElement).getPropertyValue('--success-500')
       : getComputedStyle(document.documentElement).getPropertyValue('--exit-500');
   }
   employeeSelect.addEventListener('change', updateConfirmState);
-
-  el('addEmployeeBtn').addEventListener('click', async () => {
-    const input = el('newEmployeeName');
-    const name = input.value.trim();
-    if(!name) return;
-    input.disabled = true;
-    try{
-      await apiPost({ action: 'addEmployee', name: name });
-      if(state.employees.indexOf(name) === -1) state.employees.push(name);
-      input.value = '';
-      renderEmployeeSelect();
-      employeeSelect.value = name;
-    }catch(e){ alert('Could not add employee. Check your connection and try again.'); }
-    input.disabled = false;
-  });
-
-  el('removeEmployeeBtn').addEventListener('click', async () => {
-    const current = employeeSelect.value;
-    if(!current) return;
-    if(!confirm('Remove "' + current + '" from the employee list?')) return;
-    try{
-      await apiPost({ action: 'removeEmployee', name: current });
-      state.employees = state.employees.filter(n => n !== current);
-      renderEmployeeSelect();
-    }catch(e){ alert('Could not remove employee. Check your connection and try again.'); }
-  });
 
   // ---------- Mode toggle ----------
   function setMode(mode){
@@ -331,7 +477,7 @@
     el('modeOutBtn').classList.toggle('active', mode === 'checkout');
     confirmBtn.classList.toggle('checkin', mode === 'checkin');
     confirmBtn.classList.toggle('checkout', mode === 'checkout');
-    confirmBtn.textContent = mode === 'checkin' ? '✓ Confirm Check-in' : '✓ Confirm Check-out';
+    confirmBtn.textContent = mode === 'checkin' ? t('confirmCheckIn') : t('confirmCheckOut');
   }
   el('modeInBtn').addEventListener('click', () => setMode('checkin'));
   el('modeOutBtn').addEventListener('click', () => setMode('checkout'));
@@ -347,19 +493,27 @@
   // ---------- Camera ----------
   let videoEl = null;
 
-  function setCameraMessage(text){
-    cameraBox.innerHTML = '<div class="hint">' + text + '</div>';
+  function renderCameraHint(){
+    // Only re-renders hint text; live video / captured photo states are left alone.
+    if(state.cameraState === 'unsupported') cameraBox.innerHTML = '<div class="hint">' + t('cameraUnsupported') + '</div>';
+    else if(state.cameraState === 'requesting') cameraBox.innerHTML = '<div class="hint">' + t('cameraRequesting') + '</div>';
+    else if(state.cameraState === 'denied') cameraBox.innerHTML = '<div class="hint">' + t('cameraDenied') + '</div>';
+    else if(state.cameraState === 'idle') cameraBox.innerHTML = '<div class="hint">' + t('cameraHintDefault') + '</div>';
+    // 'live' and 'captured' states keep their actual video/img content — nothing to translate.
   }
 
   startCameraBtn.addEventListener('click', async () => {
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      setCameraMessage('Camera access isn\'t available in this browser/context.');
+      state.cameraState = 'unsupported';
+      renderCameraHint();
       return;
     }
     try{
-      setCameraMessage('Requesting camera…');
+      state.cameraState = 'requesting';
+      renderCameraHint();
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
       state.stream = stream;
+      state.cameraState = 'live';
       cameraBox.innerHTML = '';
       videoEl = document.createElement('video');
       videoEl.autoplay = true; videoEl.playsInline = true; videoEl.srcObject = stream;
@@ -370,7 +524,8 @@
       startCameraBtn.style.display = 'none';
       captureBtn.style.display = 'inline-block';
     }catch(e){
-      setCameraMessage('Camera permission denied or unavailable. A photo is required to check in — please allow camera access and try again.');
+      state.cameraState = 'denied';
+      renderCameraHint();
     }
   });
 
@@ -381,6 +536,7 @@
     canvas.height = videoEl.videoHeight || 360;
     canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
     state.capturedPhoto = canvas.toDataURL('image/jpeg', 0.6);
+    state.cameraState = 'captured';
 
     if(state.stream){ state.stream.getTracks().forEach(t => t.stop()); state.stream = null; }
     cameraBox.innerHTML = '';
@@ -394,7 +550,8 @@
 
   retakeBtn.addEventListener('click', () => {
     state.capturedPhoto = null;
-    setCameraMessage('Tap "Start Camera" and take a photo to prove you\'re on-site. A photo is required before you can confirm.');
+    state.cameraState = 'idle';
+    renderCameraHint();
     retakeBtn.style.display = 'none';
     startCameraBtn.style.display = 'inline-block';
     updateConfirmState();
@@ -405,29 +562,30 @@
     const name = employeeSelect.value;
     if(!name || !state.capturedPhoto) return;
     confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Saving…';
+    confirmBtn.textContent = t('confirmSaving');
 
     try{
       await apiPost({ action: 'checkin', employee: name, type: state.mode, photoDataUrl: state.capturedPhoto });
       flashStamp(state.mode);
       await loadRecords();
     }catch(e){
-      alert('Could not save this entry. Check your connection and try again.');
+      alert(t('saveFail'));
     }
 
     state.capturedPhoto = null;
+    state.cameraState = 'idle';
     if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); state.stream=null; }
-    setCameraMessage('Tap "Start Camera" and take a photo to prove you\'re on-site. A photo is required before you can confirm.');
+    renderCameraHint();
     retakeBtn.style.display = 'none';
     captureBtn.style.display = 'none';
     startCameraBtn.style.display = 'inline-block';
 
-    confirmBtn.textContent = state.mode === 'checkin' ? '✓ Confirm Check-in' : '✓ Confirm Check-out';
+    confirmBtn.textContent = state.mode === 'checkin' ? t('confirmCheckIn') : t('confirmCheckOut');
     updateConfirmState();
   });
 
   function flashStamp(mode){
-    stampRing.textContent = mode === 'checkin' ? 'Checked In' : 'Checked Out';
+    stampRing.textContent = mode === 'checkin' ? t('stampCheckedIn') : t('stampCheckedOut');
     const color = mode === 'checkin'
       ? getComputedStyle(document.documentElement).getPropertyValue('--success-500')
       : getComputedStyle(document.documentElement).getPropertyValue('--exit-500');
@@ -444,9 +602,9 @@
   }
 
   function renderHistory(){
-    historyCount.textContent = state.records.length + ' logged';
+    historyCount.textContent = state.records.length + ' ' + t('logged');
     if(state.records.length === 0){
-      historyList.innerHTML = '<div class="empty-state">No entries yet. Check in above to start the ledger.</div>';
+      historyList.innerHTML = '<div class="empty-state">' + t('noEntries') + '</div>';
       return;
     }
     historyList.innerHTML = '';
@@ -469,37 +627,28 @@
       nameDiv.className = 'ledger-name'; nameDiv.textContent = r.employee;
       const metaDiv = document.createElement('div');
       metaDiv.className = 'ledger-meta';
-      metaDiv.textContent = (r.type === 'checkin' ? 'Checked in' : 'Checked out') + ' · ' + fmtTime(r.timestamp);
+      metaDiv.textContent = (r.type === 'checkin' ? t('checkedInWord') : t('checkedOutWord')) + ' · ' + fmtTime(r.timestamp);
       info.appendChild(nameDiv); info.appendChild(metaDiv);
       row.appendChild(info);
       historyList.appendChild(row);
     });
   }
 
-  el('clearHistoryBtn').addEventListener('click', async () => {
-    if(!confirm('Clear all check-in history for everyone? This cannot be undone.')) return;
-    try{
-      await apiPost({ action: 'clearRecords' });
-      state.records = [];
-      renderHistory();
-    }catch(e){ alert('Could not clear history. Check your connection and try again.'); }
-  });
-
   el('refreshBtn').addEventListener('click', async () => {
     await loadEmployees();
     await loadRecords();
   });
 
-  // ---------- Pay period (26th–25th cutoff) ----------
+  // ---------- Pay period (25th–24th cutoff) ----------
   const periodMonthInput = el('periodMonth');
   const periodLabel = el('periodLabel');
 
   function defaultPeriodEndMonth(){
-    // If today is on/before the 25th, the active period ends THIS month's 25th.
-    // If today is after the 25th, the active period ends NEXT month's 25th.
+    // If today is on/before the 24th, the active period ends THIS month's 24th.
+    // If today is after the 24th, the active period ends NEXT month's 24th.
     const now = new Date();
     let y = now.getFullYear(), m = now.getMonth(); // 0-indexed
-    if(now.getDate() > 25){
+    if(now.getDate() > 24){
       m += 1;
       if(m > 11){ m = 0; y += 1; }
     }
@@ -507,10 +656,10 @@
   }
 
   function getPeriodRange(){
-    const val = periodMonthInput.value; // "YYYY-MM" = the END month (25th)
+    const val = periodMonthInput.value; // "YYYY-MM" = the END month (24th)
     const [y, m] = val.split('-').map(Number); // m is 1-indexed
-    const end = new Date(y, m - 1, 25, 23, 59, 59, 999);
-    const start = new Date(y, m - 2, 26, 0, 0, 0, 0); // JS normalizes month -1 automatically
+    const end = new Date(y, m - 1, 24, 23, 59, 59, 999);
+    const start = new Date(y, m - 2, 25, 0, 0, 0, 0); // JS normalizes month -1 automatically
     return { start, end };
   }
 
@@ -520,7 +669,7 @@
 
   function updatePeriodLabel(){
     const { start, end } = getPeriodRange();
-    periodLabel.textContent = 'Period: ' + fmtShortDate(start) + ' – ' + fmtShortDate(end);
+    periodLabel.textContent = t('periodPrefix') + fmtShortDate(start) + ' – ' + fmtShortDate(end);
   }
 
   periodMonthInput.value = defaultPeriodEndMonth();
@@ -542,7 +691,7 @@
   }
 
   el('exportLogBtn').addEventListener('click', () => {
-    if(state.records.length === 0){ alert('No entries to export yet.'); return; }
+    if(state.records.length === 0){ alert(t('alertNoExport')); return; }
     const rows = [['Employee', 'Type', 'Date', 'Time', 'Timestamp (ISO)', 'Photo URL']];
     [...state.records].reverse().forEach(r => {
       const d = new Date(r.timestamp);
@@ -559,7 +708,7 @@
       return t >= start && t <= end;
     });
     if(periodRecords.length === 0){
-      alert('No entries found in this pay period (' + fmtShortDate(start) + ' – ' + fmtShortDate(end) + ').');
+      alert(t('alertNoExportPeriod') + ' (' + fmtShortDate(start) + ' – ' + fmtShortDate(end) + ').');
       return;
     }
     const groups = {};
@@ -588,6 +737,43 @@
     downloadCSV('OT-summary_' + periodTag + '.csv', rows);
   });
 
+  // ---------- Language switching ----------
+  const langButtons = document.querySelectorAll('.lang-btn');
+
+  function applyLanguage(lang){
+    LANG = lang;
+    langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+
+    el('eyebrowText').textContent = t('eyebrow');
+    el('titleText').textContent = t('title');
+    document.title = t('title');
+    el('modeInBtn').textContent = t('modeCheckIn');
+    el('modeOutBtn').textContent = t('modeCheckOut');
+    el('employeeLabelText').textContent = t('employeeLabel');
+    el('photoLabelText').textContent = t('photoLabel');
+    el('startCameraBtn').textContent = t('startCamera');
+    el('captureBtn').textContent = t('capturePhoto');
+    el('retakeBtn').textContent = t('retake');
+    el('recentEntriesText').textContent = t('recentEntries');
+    el('otPeriodLabelText').textContent = t('otPeriodLabel');
+    el('exportLogBtn').textContent = t('exportRaw');
+    el('exportSummaryBtn').textContent = t('exportSummary');
+    el('refreshBtn').textContent = t('refresh');
+    el('footerNoteText').textContent = t('footerNote');
+
+    // Re-render dynamic content that depends on language
+    setMode(state.mode);
+    renderEmployeeSelect();
+    renderHistory();
+    updatePeriodLabel();
+    renderCameraHint();
+    renderConnStatus();
+  }
+
+  langButtons.forEach(btn => {
+    btn.addEventListener('click', () => applyLanguage(btn.dataset.lang));
+  });
+
   // ---------- Loaders ----------
   async function loadEmployees(){
     try{
@@ -602,23 +788,33 @@
     }catch(e){ /* leave prior state */ }
   }
 
+  function renderConnStatus(){
+    connStatus.className = 'conn-status ' + (state.connState === 'ok' ? 'ok' : state.connState === 'err' ? 'err' : 'loading');
+    if(state.connState === 'ok') connStatus.textContent = t('connOk');
+    else if(state.connState === 'err') connStatus.textContent = t('connErr');
+    else if(state.connState === 'notConfigured') connStatus.textContent = t('connNotConfigured');
+    else connStatus.textContent = t('connConnecting');
+  }
+
   // ---------- Init ----------
   (async function init(){
+    applyLanguage(LANG);
+
     if(!apiConfigured()){
-      connStatus.className = 'conn-status err';
-      connStatus.textContent = '⚠ Not configured — set API_URL at the top of this file to your Apps Script Web App URL.';
-      employeeSelect.innerHTML = '<option disabled selected>Setup required</option>';
-      historyList.innerHTML = '<div class="empty-state">Setup required — see DEPLOY-INSTRUCTIONS.md</div>';
+      state.connState = 'notConfigured';
+      renderConnStatus();
+      employeeSelect.innerHTML = '<option disabled selected>' + t('employeeSetupRequired') + '</option>';
+      historyList.innerHTML = '<div class="empty-state">' + t('setupRequiredHistory') + '</div>';
       return;
     }
     try{
       await loadEmployees();
       await loadRecords();
-      connStatus.className = 'conn-status ok';
-      connStatus.textContent = '✓ Connected to Google Sheet';
+      state.connState = 'ok';
+      renderConnStatus();
     }catch(e){
-      connStatus.className = 'conn-status err';
-      connStatus.textContent = '⚠ Could not connect. Check the API_URL and your internet connection.';
+      state.connState = 'err';
+      renderConnStatus();
     }
   })();
 })();
