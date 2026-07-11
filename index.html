@@ -203,6 +203,13 @@
   <div class="card">
     <div class="section-title">Recent Entries <span class="count" id="historyCount">0 logged</span></div>
     <div id="historyList"><div class="empty-state">Loading ledger…</div></div>
+
+    <label style="margin-top:16px;">OT Pay Period (cutoff 26th–25th)</label>
+    <div class="manage-row">
+      <input type="month" id="periodMonth" style="flex:1;background:var(--ink-700);border:1px solid var(--line);color:var(--parchment-100);font-family:'IBM Plex Mono', monospace;font-size:14px;padding:10px 12px;border-radius:6px;" />
+    </div>
+    <div id="periodLabel" style="font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--brass-400);opacity:.85;margin-bottom:16px;margin-top:-8px;">—</div>
+
     <div class="manage-row" style="margin-top:14px;margin-bottom:0;">
       <button class="small-btn" id="exportLogBtn" type="button">Export Raw Log (CSV)</button>
       <button class="small-btn" id="exportSummaryBtn" type="button">Export Daily Summary (CSV)</button>
@@ -222,7 +229,7 @@
 (function(){
   // ====== CONFIGURE THIS ======
   // Paste the Web app URL from your Google Apps Script deployment here.
-  const API_URL = "https://script.google.com/macros/s/AKfycbwhoBuZ4UBfHKcuwKjo9IuPQ8U0WLM9HVu222DukmIiv9qqCmRFSU7FQTpGpWAjzQRc/exec";
+  const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
   // =============================
 
   const state = { mode: 'checkin', employees: [], records: [], capturedPhoto: null, stream: null };
@@ -483,6 +490,43 @@
     await loadRecords();
   });
 
+  // ---------- Pay period (26th–25th cutoff) ----------
+  const periodMonthInput = el('periodMonth');
+  const periodLabel = el('periodLabel');
+
+  function defaultPeriodEndMonth(){
+    // If today is on/before the 25th, the active period ends THIS month's 25th.
+    // If today is after the 25th, the active period ends NEXT month's 25th.
+    const now = new Date();
+    let y = now.getFullYear(), m = now.getMonth(); // 0-indexed
+    if(now.getDate() > 25){
+      m += 1;
+      if(m > 11){ m = 0; y += 1; }
+    }
+    return y + '-' + String(m + 1).padStart(2, '0');
+  }
+
+  function getPeriodRange(){
+    const val = periodMonthInput.value; // "YYYY-MM" = the END month (25th)
+    const [y, m] = val.split('-').map(Number); // m is 1-indexed
+    const end = new Date(y, m - 1, 25, 23, 59, 59, 999);
+    const start = new Date(y, m - 2, 26, 0, 0, 0, 0); // JS normalizes month -1 automatically
+    return { start, end };
+  }
+
+  function fmtShortDate(d){
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function updatePeriodLabel(){
+    const { start, end } = getPeriodRange();
+    periodLabel.textContent = 'Period: ' + fmtShortDate(start) + ' – ' + fmtShortDate(end);
+  }
+
+  periodMonthInput.value = defaultPeriodEndMonth();
+  periodMonthInput.addEventListener('change', updatePeriodLabel);
+  updatePeriodLabel();
+
   // ---------- CSV Export ----------
   function downloadCSV(filename, rows){
     const csv = rows.map(row => row.map(cell => {
@@ -509,9 +553,17 @@
   });
 
   el('exportSummaryBtn').addEventListener('click', () => {
-    if(state.records.length === 0){ alert('No entries to export yet.'); return; }
+    const { start, end } = getPeriodRange();
+    const periodRecords = state.records.filter(r => {
+      const t = new Date(r.timestamp);
+      return t >= start && t <= end;
+    });
+    if(periodRecords.length === 0){
+      alert('No entries found in this pay period (' + fmtShortDate(start) + ' – ' + fmtShortDate(end) + ').');
+      return;
+    }
     const groups = {};
-    state.records.forEach(r => {
+    periodRecords.forEach(r => {
       const d = new Date(r.timestamp);
       const dateKey = d.toLocaleDateString('en-CA');
       const key = r.employee + '|' + dateKey;
@@ -532,7 +584,8 @@
           firstIn ? firstIn.toLocaleTimeString([], {hour12:false}) : '—',
           lastOut ? lastOut.toLocaleTimeString([], {hour12:false}) : '—', hours, note]);
       });
-    downloadCSV('daily-summary_' + new Date().toLocaleDateString('en-CA') + '.csv', rows);
+    const periodTag = start.toLocaleDateString('en-CA') + '_to_' + end.toLocaleDateString('en-CA');
+    downloadCSV('OT-summary_' + periodTag + '.csv', rows);
   });
 
   // ---------- Loaders ----------
