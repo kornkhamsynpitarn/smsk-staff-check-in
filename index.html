@@ -172,6 +172,32 @@
     letter-spacing:.1em;background:var(--exit-500);color:#1f0d09;padding:3px 9px;border-radius:3px;z-index:2;
   }
 
+  .review-modal{
+    position:fixed;inset:0;background:rgba(16,28,44,0.92);z-index:220;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .review-card{
+    background:var(--ink-800);border:1px solid var(--line);border-radius:14px;
+    padding:28px 24px;max-width:360px;width:100%;text-align:center;
+  }
+  .review-mode-badge{
+    display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:18px;font-weight:600;
+  }
+  .review-mode-badge.checkin{background:rgba(90,160,111,0.18);color:var(--success-500);}
+  .review-mode-badge.checkout{background:rgba(181,87,63,0.18);color:#e08a72;}
+  .review-photo{
+    width:150px;height:150px;border-radius:14px;object-fit:cover;border:2px solid var(--brass-500);
+    margin-bottom:16px;
+  }
+  .review-name{
+    font-family:'Spectral', serif;font-weight:700;font-size:22px;color:var(--parchment-100);
+    margin-bottom:22px;word-break:break-word;
+  }
+  .review-buttons{display:flex;gap:10px;}
+  .review-buttons .small-btn{flex:1;height:44px;}
+  .review-buttons .confirm-btn{flex:1.4;margin:0;}
+
   .confirm-btn{
     width:100%;border:none;border-radius:8px;padding:clamp(11px,2dvh,15px);font-family:'IBM Plex Mono', monospace;
     font-size:clamp(12px,1.8dvh,14px);letter-spacing:.08em;text-transform:uppercase;font-weight:600;cursor:pointer;
@@ -202,6 +228,21 @@
   .ledger-name{font-size:14px;color:var(--parchment-100);}
   .ledger-meta{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--parchment-200);opacity:.65;}
   .empty-state{text-align:center;padding:30px 10px;font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--parchment-200);opacity:.5;}
+
+  .staff-board-inline{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    margin-top:clamp(10px,1.8dvh,18px);
+    padding-top:clamp(8px,1.4dvh,14px);
+    border-top:1px solid var(--line);
+    overflow-y:auto;
+  }
+  .staff-board-title{
+    font-family:'Spectral', serif;font-weight:600;font-size:clamp(12px,1.7dvh,14px);
+    color:var(--parchment-100);opacity:.85;margin-bottom:clamp(8px,1.2dvh,12px);flex:0 0 auto;
+  }
 
   .staff-grid{
     display:grid;grid-template-columns:repeat(auto-fill, minmax(76px, 1fr));gap:16px;
@@ -283,12 +324,12 @@
       <div id="photoStatus" style="font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--exit-500); opacity:.85; margin-bottom:12px;">⚠ No photo captured yet</div>
 
       <button class="confirm-btn checkin" id="confirmBtn" type="button" disabled>✓ Confirm Check-in</button>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="section-title"><span id="staffBoardText">Today's Attendance</span></div>
-    <div class="staff-grid" id="staffGrid"></div>
+      <div class="staff-board-inline">
+        <div class="staff-board-title"><span id="staffBoardText">Today's Attendance</span></div>
+        <div class="staff-grid" id="staffGrid"></div>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -322,13 +363,25 @@
   </div>
 </div>
 
+<div class="review-modal" id="reviewModal" style="display:none;">
+  <div class="review-card">
+    <div class="review-mode-badge" id="reviewModeBadge">Checking In</div>
+    <img id="reviewPhoto" class="review-photo" alt="" />
+    <div class="review-name" id="reviewName">—</div>
+    <div class="review-buttons">
+      <button class="small-btn danger" id="reviewCancelBtn" type="button">Cancel</button>
+      <button class="confirm-btn checkin" id="reviewConfirmBtn" type="button">✓ Confirm</button>
+    </div>
+  </div>
+</div>
+
 <div class="stamp-flash" id="stampFlash"><div class="ring" id="stampRing">Checked In</div></div>
 
 <script>
 (function(){
   // ====== CONFIGURE THIS ======
   // Paste the Web app URL from your Google Apps Script deployment here.
-  const API_URL = "https://script.google.com/macros/s/AKfycbxvvQ_1i6DwWlioaYYDcb4Pfx73BjEQk4UX7V0mV7IgP4ThkAmVDW-biHFC4i9W7Jee/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyziTMm8GbHpZXkCR1awuNt0yMtEwXjywDwsRDRhU76AVZim4dS2SLdUnOd2oZdEsw/exec";
   // =============================
 
   // ---------- Translations ----------
@@ -376,6 +429,11 @@
       checkedInWord: "Checked in",
       checkedOutWord: "Checked out",
       saveFail: "Could not save this entry. Check your connection and try again.",
+      alreadyCheckedIn: "Already checked in today — check-in is locked until tomorrow.",
+      alreadyCheckedOut: "Already checked out today — check-out is locked until tomorrow.",
+      reviewCheckingIn: "Checking In",
+      reviewCheckingOut: "Checking Out",
+      cancel: "Cancel",
       lastNone: "No check-ins recorded yet",
       lastTemplateToday: "Last: {action} today at {time}",
       lastTemplateOther: "Last: {action} on {date} at {time}",
@@ -424,6 +482,11 @@
       checkedInWord: "เข้างาน",
       checkedOutWord: "ออกงาน",
       saveFail: "บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่",
+      alreadyCheckedIn: "เข้างานวันนี้แล้ว — ระบบล็อกไม่ให้เข้างานซ้ำจนถึงวันพรุ่งนี้",
+      alreadyCheckedOut: "ออกงานวันนี้แล้ว — ระบบล็อกไม่ให้ออกงานซ้ำจนถึงวันพรุ่งนี้",
+      reviewCheckingIn: "กำลังเข้างาน",
+      reviewCheckingOut: "กำลังออกงาน",
+      cancel: "ยกเลิก",
       lastNone: "ยังไม่มีประวัติการเข้า-ออกงาน",
       lastTemplateToday: "ล่าสุด: {action}วันนี้ เวลา {time} น.",
       lastTemplateOther: "ล่าสุด: {action}เมื่อ {date} เวลา {time} น.",
@@ -472,6 +535,11 @@
       checkedInWord: "အလုပ်ဝင်",
       checkedOutWord: "အလုပ်ထွက်",
       saveFail: "မှတ်တမ်း သိမ်းဆည်း၍ မရပါ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်စမ်းကြည့်ပါ",
+      alreadyCheckedIn: "ယနေ့ အလုပ်ဝင်ပြီးဖြစ်သည် — မနက်ဖြန်အထိ ထပ်မံ အလုပ်ဝင်၍ မရပါ",
+      alreadyCheckedOut: "ယနေ့ အလုပ်ထွက်ပြီးဖြစ်သည် — မနက်ဖြန်အထိ ထပ်မံ အလုပ်ထွက်၍ မရပါ",
+      reviewCheckingIn: "အလုပ်ဝင်နေသည်",
+      reviewCheckingOut: "အလုပ်ထွက်နေသည်",
+      cancel: "မလုပ်တော့ပါ",
       lastNone: "မှတ်တမ်း မရှိသေးပါ",
       lastTemplateToday: "နောက်ဆုံး: ယနေ့ {time} တွင် {action}",
       lastTemplateOther: "နောက်ဆုံး: {date} ရက် {time} တွင် {action}",
@@ -621,14 +689,27 @@
     });
   }
 
+  function hasActionToday(name, type){
+    const now = new Date();
+    return state.records.some(r => r.employee === name && r.type === type && isSameDay(r.timestamp, now));
+  }
+
   function updateConfirmState(){
     const hasEmployee = !!employeeSelect.value;
     const hasPhoto = !!state.capturedPhoto;
-    confirmBtn.disabled = !(hasEmployee && hasPhoto && apiConfigured());
-    photoStatus.textContent = hasPhoto ? t('photoCaptured') : t('photoNotCaptured');
-    photoStatus.style.color = hasPhoto
-      ? getComputedStyle(document.documentElement).getPropertyValue('--success-500')
-      : getComputedStyle(document.documentElement).getPropertyValue('--exit-500');
+    const alreadyDone = hasEmployee && hasActionToday(employeeSelect.value, state.mode);
+
+    confirmBtn.disabled = !(hasEmployee && hasPhoto && apiConfigured()) || alreadyDone;
+
+    if(alreadyDone){
+      photoStatus.textContent = state.mode === 'checkin' ? t('alreadyCheckedIn') : t('alreadyCheckedOut');
+      photoStatus.style.color = getComputedStyle(document.documentElement).getPropertyValue('--exit-500');
+    }else{
+      photoStatus.textContent = hasPhoto ? t('photoCaptured') : t('photoNotCaptured');
+      photoStatus.style.color = hasPhoto
+        ? getComputedStyle(document.documentElement).getPropertyValue('--success-500')
+        : getComputedStyle(document.documentElement).getPropertyValue('--exit-500');
+    }
   }
   employeeSelect.addEventListener('change', updateConfirmState);
 
@@ -640,6 +721,7 @@
     confirmBtn.classList.toggle('checkin', mode === 'checkin');
     confirmBtn.classList.toggle('checkout', mode === 'checkout');
     confirmBtn.textContent = mode === 'checkin' ? t('confirmCheckIn') : t('confirmCheckOut');
+    updateConfirmState();
   }
   el('modeInBtn').addEventListener('click', () => setMode('checkin'));
   el('modeOutBtn').addEventListener('click', () => setMode('checkout'));
@@ -753,12 +835,51 @@
     updateConfirmState();
   });
 
-  // ---------- Confirm check-in/out ----------
-  confirmBtn.addEventListener('click', async () => {
+  // ---------- Confirm check-in/out (review step first) ----------
+  const reviewModal = el('reviewModal');
+  const reviewModeBadge = el('reviewModeBadge');
+  const reviewPhoto = el('reviewPhoto');
+  const reviewName = el('reviewName');
+  const reviewCancelBtn = el('reviewCancelBtn');
+  const reviewConfirmBtn = el('reviewConfirmBtn');
+
+  confirmBtn.addEventListener('click', () => {
     const name = employeeSelect.value;
     if(!name || !state.capturedPhoto) return;
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = t('confirmSaving');
+
+    reviewName.textContent = name;
+    reviewPhoto.src = state.capturedPhoto;
+    reviewModeBadge.textContent = state.mode === 'checkin' ? t('reviewCheckingIn') : t('reviewCheckingOut');
+    reviewModeBadge.classList.toggle('checkin', state.mode === 'checkin');
+    reviewModeBadge.classList.toggle('checkout', state.mode === 'checkout');
+    reviewConfirmBtn.classList.toggle('checkin', state.mode === 'checkin');
+    reviewConfirmBtn.classList.toggle('checkout', state.mode === 'checkout');
+    reviewConfirmBtn.textContent = state.mode === 'checkin' ? t('confirmCheckIn') : t('confirmCheckOut');
+    reviewCancelBtn.textContent = t('cancel');
+    reviewConfirmBtn.disabled = false;
+
+    reviewModal.style.display = 'flex';
+  });
+
+  reviewCancelBtn.addEventListener('click', () => {
+    reviewModal.style.display = 'none';
+  });
+
+  reviewConfirmBtn.addEventListener('click', async () => {
+    const name = employeeSelect.value;
+    if(!name || !state.capturedPhoto) { reviewModal.style.display = 'none'; return; }
+
+    // Defense-in-depth: re-check for a same-day duplicate right before saving,
+    // in case another device already recorded this action in the meantime.
+    if(hasActionToday(name, state.mode)){
+      reviewModal.style.display = 'none';
+      updateConfirmState();
+      alert(state.mode === 'checkin' ? t('alreadyCheckedIn') : t('alreadyCheckedOut'));
+      return;
+    }
+
+    reviewConfirmBtn.disabled = true;
+    reviewConfirmBtn.textContent = t('confirmSaving');
 
     try{
       await apiPost({ action: 'checkin', employee: name, type: state.mode, photoDataUrl: state.capturedPhoto });
@@ -767,6 +888,8 @@
     }catch(e){
       alert(t('saveFail'));
     }
+
+    reviewModal.style.display = 'none';
 
     state.capturedPhoto = null;
     photoThumb.src = '';
