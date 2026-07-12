@@ -328,7 +328,7 @@
 (function(){
   // ====== CONFIGURE THIS ======
   // Paste the Web app URL from your Google Apps Script deployment here.
-  const API_URL = "https://script.google.com/macros/s/AKfycbz6b_3r2GLxY1PX_rTkSIrcplaDkewlGlsDnzlDGOuwyH3Tn-kGB3_MIBVPnHhG_BAh/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbxvvQ_1i6DwWlioaYYDcb4Pfx73BjEQk4UX7V0mV7IgP4ThkAmVDW-biHFC4i9W7Jee/exec";
   // =============================
 
   // ---------- Translations ----------
@@ -379,6 +379,7 @@
       lastNone: "No check-ins recorded yet",
       lastTemplateToday: "Last: {action} today at {time}",
       lastTemplateOther: "Last: {action} on {date} at {time}",
+      staffBoard: "Today's Attendance",
     },
     th: {
       eyebrow: "สมุดบันทึกเวลาทำงานพนักงาน",
@@ -426,6 +427,7 @@
       lastNone: "ยังไม่มีประวัติการเข้า-ออกงาน",
       lastTemplateToday: "ล่าสุด: {action}วันนี้ เวลา {time} น.",
       lastTemplateOther: "ล่าสุด: {action}เมื่อ {date} เวลา {time} น.",
+      staffBoard: "สถานะเข้างานวันนี้",
     },
     mm: {
       eyebrow: "ဝန်ထမ်းအလုပ်ချိန်မှတ်တမ်း",
@@ -473,6 +475,7 @@
       lastNone: "မှတ်တမ်း မရှိသေးပါ",
       lastTemplateToday: "နောက်ဆုံး: ယနေ့ {time} တွင် {action}",
       lastTemplateOther: "နောက်ဆုံး: {date} ရက် {time} တွင် {action}",
+      staffBoard: "ယနေ့ တက်ရောက်မှု",
     },
   };
   let LANG = 'en';
@@ -529,6 +532,7 @@
       employeeSelect.appendChild(opt);
       updateConfirmState();
       renderLastAction();
+      renderStaffGrid();
       return;
     }
     state.employees.forEach(name => {
@@ -538,6 +542,7 @@
     });
     updateConfirmState();
     renderLastAction();
+    renderStaffGrid();
   }
 
   function renderLastAction(){
@@ -568,6 +573,53 @@
       .replace('{date}', dateStr);
   }
   employeeSelect.addEventListener('change', renderLastAction);
+
+  function isSameDay(iso, ref){
+    return new Date(iso).toDateString() === ref.toDateString();
+  }
+
+  function renderStaffGrid(){
+    const grid = el('staffGrid');
+    if(!grid) return;
+    if(state.employees.length === 0){
+      grid.innerHTML = '<div class="empty-state">' + t('employeeNone') + '</div>';
+      return;
+    }
+    const today = new Date();
+    grid.innerHTML = '';
+    state.employees.forEach(name => {
+      let latestCheckin = null;
+      for(const r of state.records){
+        if(r.employee !== name || r.type !== 'checkin') continue;
+        if(!isSameDay(r.timestamp, today)) continue;
+        if(!latestCheckin || new Date(r.timestamp) > new Date(latestCheckin.timestamp)) latestCheckin = r;
+      }
+
+      const cell = document.createElement('div');
+      cell.className = 'staff-cell';
+
+      if(latestCheckin && latestCheckin.photoUrl){
+        const img = document.createElement('img');
+        img.className = 'staff-photo';
+        img.src = latestCheckin.photoUrl;
+        img.loading = 'lazy';
+        img.alt = name;
+        cell.appendChild(img);
+      }else{
+        const ph = document.createElement('div');
+        ph.className = 'staff-photo-placeholder';
+        ph.textContent = '?';
+        cell.appendChild(ph);
+      }
+
+      const label = document.createElement('div');
+      label.className = 'staff-name';
+      label.textContent = name;
+      cell.appendChild(label);
+
+      grid.appendChild(cell);
+    });
+  }
 
   function updateConfirmState(){
     const hasEmployee = !!employeeSelect.value;
@@ -885,6 +937,7 @@
     el('startCameraBtn').textContent = '📷 ' + t('startCamera');
     el('retakeBtn').textContent = t('retake');
     el('recentEntriesText').textContent = t('recentEntries');
+    el('staffBoardText').textContent = t('staffBoard');
     el('otPeriodLabelText').textContent = t('otPeriodLabel');
     el('exportSummaryBtn').textContent = t('exportSummary');
     el('refreshBtn').textContent = t('refresh');
@@ -916,6 +969,7 @@
       state.records = await apiGet('records');
       renderHistory();
       renderLastAction();
+      renderStaffGrid();
     }catch(e){ /* leave prior state */ }
   }
 
