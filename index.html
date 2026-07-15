@@ -249,6 +249,12 @@
     border:2px dashed var(--line);color:var(--parchment-200);opacity:.45;
     font-family:'IBM Plex Mono', monospace;font-size:22px;font-weight:600;background:var(--ink-900);
   }
+  .staff-leave-badge{
+    width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:2px solid rgba(0,0,0,0.15);
+    font-family:'IBM Plex Mono', monospace;font-size:13px;font-weight:700;letter-spacing:.02em;
+    cursor:default;
+  }
   .staff-name{
     font-family:'IBM Plex Sans', sans-serif;font-size:11px;color:var(--parchment-100);
     text-align:center;line-height:1.3;max-width:82px;overflow:hidden;text-overflow:ellipsis;
@@ -284,7 +290,7 @@
     <div class="lang-switch" id="langSwitch">
       <button class="lang-btn" data-lang="en" type="button">English</button>
       <button class="lang-btn" data-lang="th" type="button">ภาษาไทย</button>
-      <button class="lang-btn" data-lang="mm" type="button"> မြန်မာဘာသာ</button>
+      <button class="lang-btn" data-lang="mm" type="button">မြန်မာဘာသာ</button>
     </div>
 
     <div class="letterhead">
@@ -373,7 +379,7 @@
 (function(){
   // ====== CONFIGURE THIS ======
   // Paste the Web app URL from your Google Apps Script deployment here.
-  const API_URL = "https://script.google.com/macros/s/AKfycbyziTMm8GbHpZXkCR1awuNt0yMtEwXjywDwsRDRhU76AVZim4dS2SLdUnOd2oZdEsw/exec";
+  const API_URL = "https://script.google.com/macros/library/d/19K5ojeTYkuDlbP2SBupJ0oRbRrHLSR1Zeq5iLN7FHMVo7OmVQqdZu8vA/6";
   // =============================
 
   // ---------- Translations ----------
@@ -541,7 +547,7 @@
   let LANG = 'en';
   function t(key){ return (T[LANG] && T[LANG][key]) || T.en[key] || key; }
 
-  const state = { mode: 'checkin', employees: [], records: [], capturedPhoto: null, stream: null, connState: 'loading' };
+  const state = { mode: 'checkin', employees: [], records: [], capturedPhoto: null, stream: null, connState: 'loading', leaveToday: {} };
 
   const el = id => document.getElementById(id);
   const employeeSelect = el('employeeSelect');
@@ -638,6 +644,18 @@
     return new Date(iso).toDateString() === ref.toDateString();
   }
 
+  function contrastTextColor(hex){
+    // Returns black or white depending on which reads better against the given hex background.
+    const h = String(hex).replace('#', '');
+    if(h.length !== 6) return '#1a1a1a';
+    const r = parseInt(h.substr(0, 2), 16);
+    const g = parseInt(h.substr(2, 2), 16);
+    const b = parseInt(h.substr(4, 2), 16);
+    // Perceived brightness (standard luminance weighting).
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 150 ? '#1a1a1a' : '#f5f2e8';
+  }
+
   function renderStaffGrid(){
     const grid = el('staffGrid');
     if(!grid) return;
@@ -665,6 +683,17 @@
         img.loading = 'lazy';
         img.alt = name;
         cell.appendChild(img);
+      }else if(state.leaveToday[name]){
+        const leave = state.leaveToday[name];
+        const badge = document.createElement('div');
+        badge.className = 'staff-leave-badge';
+        badge.textContent = leave.code;
+        badge.title = leave.label;
+        if(leave.color){
+          badge.style.background = leave.color;
+          badge.style.color = contrastTextColor(leave.color);
+        }
+        cell.appendChild(badge);
       }else{
         const ph = document.createElement('div');
         ph.className = 'staff-photo-placeholder';
@@ -948,6 +977,7 @@
   el('refreshBtn').addEventListener('click', async () => {
     await loadEmployees();
     await loadRecords();
+    await loadLeaveToday();
   });
 
   // ---------- Pay period (25th–24th cutoff) ----------
@@ -1089,6 +1119,12 @@
       renderStaffGrid();
     }catch(e){ /* leave prior state */ }
   }
+  async function loadLeaveToday(){
+    try{
+      state.leaveToday = await apiGet('leaveToday');
+      renderStaffGrid();
+    }catch(e){ /* leave prior state — badges just won't show if this fails */ }
+  }
 
   function renderConnStatus(){
     connStatus.className = 'conn-status ' + (state.connState === 'ok' ? 'ok' : state.connState === 'err' ? 'err' : 'loading');
@@ -1112,6 +1148,7 @@
     try{
       await loadEmployees();
       await loadRecords();
+      loadLeaveToday(); // fire-and-forget; not critical to initial render
       state.connState = 'ok';
       renderConnStatus();
     }catch(e){
