@@ -224,6 +224,20 @@
   .ledger-meta{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--parchment-200);opacity:.65;}
   .empty-state{text-align:center;padding:30px 10px;font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--parchment-200);opacity:.5;}
 
+  .leave-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .leave-row:last-child{border-bottom:none;}
+  .leave-dot{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono', monospace;font-size:10px;font-weight:700;
+    border:1px solid rgba(0,0,0,0.15);
+  }
+  .leave-name{font-size:14px;color:var(--parchment-100);flex:1;}
+  .leave-type-pill{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;font-weight:600;
+    padding:4px 10px;border-radius:12px;white-space:nowrap;
+  }
+
   .staff-board-inline{
     display:flex;
     flex-direction:column;
@@ -328,6 +342,11 @@
         <div class="staff-grid" id="staffGrid"></div>
       </div>
     </div>
+  </div>
+
+  <div class="card" id="leaveTodayCard" style="display:none;">
+    <div class="section-title"><span id="leaveTodayText">On Leave Today</span></div>
+    <div id="leaveTodayList"></div>
   </div>
 
   <div class="card">
@@ -436,6 +455,12 @@
       lastTemplateToday: "Last: {action} today at {time}",
       lastTemplateOther: "Last: {action} on {date} at {time}",
       staffBoard: "Today's Attendance",
+      leaveTodayTitle: "On Leave Today",
+      leaveH: "Holiday",
+      leavePH: "Public Holiday",
+      leavePL: "Personal Leave",
+      leaveSL: "Sick Leave",
+      leaveAL: "Annual Leave",
     },
     th: {
       eyebrow: "สมุดบันทึกเวลาทำงานพนักงาน",
@@ -489,6 +514,12 @@
       lastTemplateToday: "ล่าสุด: {action}วันนี้ เวลา {time} น.",
       lastTemplateOther: "ล่าสุด: {action}เมื่อ {date} เวลา {time} น.",
       staffBoard: "สถานะเข้างานวันนี้",
+      leaveTodayTitle: "ลาวันนี้",
+      leaveH: "วันหยุด",
+      leavePH: "วันหยุดนักขัตฤกษ์",
+      leavePL: "ลากิจ",
+      leaveSL: "ลาป่วย",
+      leaveAL: "ลาพักร้อน",
     },
     mm: {
       eyebrow: "ဝန်ထမ်းအလုပ်ချိန်မှတ်တမ်း",
@@ -542,6 +573,12 @@
       lastTemplateToday: "နောက်ဆုံး: ယနေ့ {time} တွင် {action}",
       lastTemplateOther: "နောက်ဆုံး: {date} ရက် {time} တွင် {action}",
       staffBoard: "ယနေ့ တက်ရောက်မှု",
+      leaveTodayTitle: "ယနေ့ ခွင့်ယူသူများ",
+      leaveH: "ခွင့်ရက်",
+      leavePH: "အများပြည်သူ ခွင့်ရက်",
+      leavePL: "ကိုယ်ရေးကိစ္စ ခွင့်",
+      leaveSL: "နေမကောင်း ခွင့်",
+      leaveAL: "နှစ်ပတ်လည် ခွင့်",
     },
   };
   let LANG = 'en';
@@ -569,7 +606,7 @@
   const modalBottomBar = el('modalBottomBar');
 
   function apiConfigured(){
-    return API_URL && API_URL.indexOf('https://script.google.com/macros/s/AKfycbw7EbwJOABqAlLcVQnP92FQs0PTUTqQ1uxHD6RoaiDQMulLJWnWaFgpRX-HPC6H_aKU/exec') === -1;
+    return API_URL && API_URL.indexOf('PASTE_YOUR_WEB_APP_URL_HERE') === -1;
   }
 
   // ---------- API helpers ----------
@@ -644,6 +681,12 @@
     return new Date(iso).toDateString() === ref.toDateString();
   }
 
+  function leaveLabelFor(leave){
+    const key = 'leave' + leave.code;
+    const translated = T[LANG] && T[LANG][key];
+    return translated || leave.label;
+  }
+
   function contrastTextColor(hex){
     // Returns black or white depending on which reads better against the given hex background.
     const h = String(hex).replace('#', '');
@@ -688,7 +731,7 @@
         const badge = document.createElement('div');
         badge.className = 'staff-leave-badge';
         badge.textContent = leave.code;
-        badge.title = leave.label;
+        badge.title = leaveLabelFor(leave);
         if(leave.color){
           badge.style.background = leave.color;
           badge.style.color = contrastTextColor(leave.color);
@@ -942,13 +985,16 @@
   }
 
   function renderHistory(){
-    historyCount.textContent = state.records.length + ' ' + t('logged');
-    if(state.records.length === 0){
+    const today = new Date();
+    const todaysRecords = state.records.filter(r => isSameDay(r.timestamp, today));
+
+    historyCount.textContent = todaysRecords.length + ' ' + t('logged');
+    if(todaysRecords.length === 0){
       historyList.innerHTML = '<div class="empty-state">' + t('noEntries') + '</div>';
       return;
     }
     historyList.innerHTML = '';
-    state.records.slice(0, 50).forEach(r => {
+    todaysRecords.forEach(r => {
       const row = document.createElement('div');
       row.className = 'ledger-row';
       if(r.photoUrl){
@@ -1085,6 +1131,8 @@
     el('retakeBtn').textContent = t('retake');
     el('recentEntriesText').textContent = t('recentEntries');
     el('staffBoardText').textContent = t('staffBoard');
+    el('leaveTodayText').textContent = t('leaveTodayTitle');
+    renderLeaveTodayList();
     el('otPeriodLabelText').textContent = t('otPeriodLabel');
     el('exportSummaryBtn').textContent = t('exportSummary');
     el('refreshBtn').textContent = t('refresh');
@@ -1119,10 +1167,54 @@
       renderStaffGrid();
     }catch(e){ /* leave prior state */ }
   }
+  function renderLeaveTodayList(){
+    const card = el('leaveTodayCard');
+    const list = el('leaveTodayList');
+    const names = Object.keys(state.leaveToday);
+
+    if(names.length === 0){
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+    list.innerHTML = '';
+    names.forEach(name => {
+      const leave = state.leaveToday[name];
+      const row = document.createElement('div');
+      row.className = 'leave-row';
+
+      const dot = document.createElement('div');
+      dot.className = 'leave-dot';
+      dot.textContent = leave.code;
+      if(leave.color){
+        dot.style.background = leave.color;
+        dot.style.color = contrastTextColor(leave.color);
+      }
+      row.appendChild(dot);
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'leave-name';
+      nameEl.textContent = name;
+      row.appendChild(nameEl);
+
+      const pill = document.createElement('div');
+      pill.className = 'leave-type-pill';
+      pill.textContent = leaveLabelFor(leave);
+      if(leave.color){
+        pill.style.background = leave.color;
+        pill.style.color = contrastTextColor(leave.color);
+      }
+      row.appendChild(pill);
+
+      list.appendChild(row);
+    });
+  }
+
   async function loadLeaveToday(){
     try{
       state.leaveToday = await apiGet('leaveToday');
       renderStaffGrid();
+      renderLeaveTodayList();
     }catch(e){ /* leave prior state — badges just won't show if this fails */ }
   }
 
