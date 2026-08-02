@@ -643,6 +643,7 @@
       updateConfirmState();
       renderLastAction();
       renderStaffGrid();
+      updateModeToggle();
       return;
     }
     state.employees.forEach(name => {
@@ -653,6 +654,7 @@
     updateConfirmState();
     renderLastAction();
     renderStaffGrid();
+    updateModeToggle();
   }
 
   function renderLastAction(){
@@ -787,17 +789,35 @@
   employeeSelect.addEventListener('change', updateConfirmState);
 
   // ---------- Mode toggle ----------
+  function refreshModeUI(){
+    el('modeInBtn').classList.toggle('active', state.mode === 'checkin');
+    el('modeOutBtn').classList.toggle('active', state.mode === 'checkout');
+    confirmBtn.classList.toggle('checkin', state.mode === 'checkin');
+    confirmBtn.classList.toggle('checkout', state.mode === 'checkout');
+    confirmBtn.textContent = state.mode === 'checkin' ? t('confirmCheckIn') : t('confirmCheckOut');
+  }
   function setMode(mode){
     state.mode = mode;
-    el('modeInBtn').classList.toggle('active', mode === 'checkin');
-    el('modeOutBtn').classList.toggle('active', mode === 'checkout');
-    confirmBtn.classList.toggle('checkin', mode === 'checkin');
-    confirmBtn.classList.toggle('checkout', mode === 'checkout');
-    confirmBtn.textContent = mode === 'checkin' ? t('confirmCheckIn') : t('confirmCheckOut');
+    refreshModeUI();
     updateConfirmState();
   }
   el('modeInBtn').addEventListener('click', () => setMode('checkin'));
   el('modeOutBtn').addEventListener('click', () => setMode('checkout'));
+
+  // Once the selected employee has already checked in today, hide the
+  // "Check In" toggle so only "Check Out" is available to them. If they
+  // were sitting in check-in mode when this happens, flip them over to
+  // check-out mode automatically.
+  function updateModeToggle(){
+    const name = employeeSelect.value;
+    const checkedInToday = !!name && hasActionToday(name, 'checkin');
+    el('modeInBtn').style.display = checkedInToday ? 'none' : '';
+    if(checkedInToday && state.mode === 'checkin'){
+      state.mode = 'checkout';
+    }
+    refreshModeUI();
+  }
+  employeeSelect.addEventListener('change', updateModeToggle);
 
   // ---------- Clock ----------
   function tickClock(){
@@ -1028,9 +1048,7 @@
   }
 
   el('refreshBtn').addEventListener('click', async () => {
-    await loadEmployees();
-    await loadRecords();
-    await loadLeaveToday();
+    await Promise.all([loadEmployees(), loadRecords(), loadLeaveToday()]);
   });
 
   // ---------- Pay period (25th–24th cutoff) ----------
@@ -1172,6 +1190,7 @@
       renderHistory();
       renderLastAction();
       renderStaffGrid();
+      updateModeToggle();
     }catch(e){ /* leave prior state */ }
   }
   function renderLeaveTodayList(){
@@ -1245,8 +1264,7 @@
       return;
     }
     try{
-      await loadEmployees();
-      await loadRecords();
+      await Promise.all([loadEmployees(), loadRecords()]);
       loadLeaveToday(); // fire-and-forget; not critical to initial render
       state.connState = 'ok';
       renderConnStatus();
