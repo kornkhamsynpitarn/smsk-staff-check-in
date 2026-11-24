@@ -1183,7 +1183,7 @@
   if(!Array.isArray(data)) throw new Error('Employees response invalid');
   state.employees = data.map(x => typeof x === 'string' ? x.trim() : (x.full || x.name || '')).filter(Boolean);
   renderEmployeeSelect();
-    }catch(e){ /* leave prior state */ }
+}catch(e){ /* leave prior state */ }
   }
   async function loadRecords(){
     try{
